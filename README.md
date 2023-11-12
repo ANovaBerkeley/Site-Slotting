@@ -15,7 +15,6 @@ NOTE: Our data is not JSON, this is just an easy way to see the structure of dat
 
 ```json
 row = {'Jacob Aldrich':
-    {'Site Leader': False},
     {'Site #1': None},
     {'Site #2': 1},
     {'Site #3': 3},
