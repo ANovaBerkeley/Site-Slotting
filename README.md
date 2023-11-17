@@ -38,3 +38,10 @@ pip install -r requirements.txt
 ```
 
 then proceed to run the notebook.ipynb or algorithm.py on your own data sets. Some data cleaning may be necessary.
+
+TODO:
+
+1. Create Google Form with site slotting questions
+2. Look at CSV created from the form
+3. Use CSV to create code to place members at sites rigorously
+4. Profit??

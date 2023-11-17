@@ -10,7 +10,7 @@ def randomized_matching(
     site_preferences: pd.DataFrame,
     df_site_col_indices: tuple,
     num_pairings: int = 1,
-    num_iterations: int = 1,
+    num_iterations: int = 10,
 ) -> list:
     """
     Implements a randomized matching algorithm for pairing items based on preferences.
@@ -50,7 +50,7 @@ def randomized_matching(
             member_top_sites = sorted(member_top_sites, key=lambda x: x[1])
             member_top_sites = [i[0] for i in member_top_sites]
 
-            # Choose best site with 70% chance, otherwise choose random site as member pairing
+            # Choose most desired site with 70% chance, otherwise choose random site as member pairing
             random_float = random()
             if random_float > 0.7:
                 num_top_sites = len(member_top_sites) - 1
@@ -72,75 +72,43 @@ def randomized_matching(
     return pairing_list[:num_pairings]
 
 
-def score(pairings: list, site_preferences: list) -> int:
+def score(pairings: list, site_preferences: pd.DataFrame) -> int:
     """
     The scoring function for a list of pairings given a list of preferences.
 
     General Guidelines:
         - 5 or less people at each site
-        - Equal girl/guy ratio
-        - 1 CC member at each site
-        - 1 Car at each site
+        - 1 Exec at most at each site
+        - 1-2 CC members at each site
+        - 1 driver at each site
+        - Site leaders must be placed at their site
+        - Spanish speakers should be placed at Spanish speaking sites
         - Want to place each member at their most desired site
 
     Args:
         pairings (List): A (N, 2) list where each entry in the list is a member-site pairing.
         site_preferences (DataFrame): A DF containing each members site preferences and other
-            information such as car information, gender, CC member, etc.
+            information such as car information, CC member, etc.
 
     Returns:
         int: The score of pairings given preferences.
     """
-    return
+
+    ### SCORING GUIDELINES (Lowest score wins!)
+    # Placed at #1 site: +0
+    # Placed at #2 site: +5
+    # Placed at #3 site: +10
+    # Placed at #4 site: +20
+    # Placed at #5 site: +50
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
 
 
-def contains_pattern(string, pattern):
-    return re.search(pattern, string) is not None
-
-
-columns = [
-    "Timestamp",
-    "Email Address",
-    "Name",
-    "[DCA] Monday 3:25PM - 4:50PM",
-    "[DCA] Wednesday 3:25PM - 4:50PM",
-    "[Montera] Thursday 3:25PM - 5:40PM",
-    "[DeJean] Monday 2:40PM - 4:20PM",
-    "[DeJean] Wednesday 2:40PM - 4:20PM",
-    "[King] Tuesday 3:00PM - 4:30PM",
-    "[King] Thursday 3:00PM - 4:30PM",
-    "[Rudsdale] Tuesday 1:35PM - 3:30PM (Spanish section)",
-    "[Rudsdale] Thursday 1:35PM - 3:30PM (Spanish section)",
-    "[Rudsdale] Wednesday 10:30AM - 1:00PM (Spanish section)",
-    "[Longfellow] Monday 4:00PM - 5:30PM",
-    "[Longfellow] Wednesday 2:00PM - 3:30PM",
-    "[SquashDrive] Thursday 3:55PM - 5:35PM",
-    "[John Henry] Tuesday 3:30PM - 5:30PM",
-    "[John Henry] Thursday 3:30PM - 5:30PM",
-]
-
-
-anonymized_data = pd.read_csv("anonymized_data.csv")
-anonymized_data_cleaned = anonymized_data.copy()
-anonymized_data_cleaned = anonymized_data_cleaned.drop("Unnamed: 0", axis=1)
-anonymized_data_cleaned = anonymized_data_cleaned.drop(
-    "Please read the information above. Are you aware and do you agree with the site policies?",
-    axis=1,
-)
-anonymized_data_cleaned = anonymized_data_cleaned.rename(
-    columns={
-        "Name :D": "Name",
-        "Have you confirmed being a site leader with Jacob or Fernanda?": "Site Leader",
-    }
-)
-anonymized_data_cleaned["Site Leader"] = [
-    contains_pattern(str(i), r"Yes") for i in anonymized_data_cleaned["Site Leader"]
-]
-anonymized_data_cleaned = anonymized_data_cleaned.iloc[:, :19]
-anonymized_data_cleaned = anonymized_data_cleaned[
-    ~anonymized_data_cleaned["Site Leader"]
-]
-anonymized_data_cleaned = anonymized_data_cleaned.drop("Site Leader", axis=1)
-anonymized_data_cleaned = anonymized_data_cleaned.reset_index(drop=True)
-
+anonymized_data_cleaned = pd.read_csv("anonymized_data_features.csv")
 randomized_matching(anonymized_data_cleaned, [3, 17])
