@@ -1,114 +1,39 @@
-import numpy as np
 import pandas as pd
-import re
-from random import randint
-from random import random
-from tqdm import tqdm
+from openai import OpenAI
 
 
-def randomized_matching(
-    site_preferences: pd.DataFrame,
-    df_site_col_indices: tuple,
-    num_pairings: int = 1,
-    num_iterations: int = 10,
-) -> list:
-    """
-    Implements a randomized matching algorithm for pairing items based on preferences.
-    This function takes in member preferences, a dictionary specifying the preferences of
-    items. The function then generates pairings between items randomly and evaluates
-    their scores based on preferences. The pairings are sorted by score, and the top pairings
-    are returned.
-
-    Args:
-        site_preferences (pd.DataFrame): A DataFrame representing member preferences where
-            rows represent items and columns represent their preferences.
-        num_pairings (int, optional): The number of pairings to generate. Defaults to 1.
-        num_iterations (int, optional): The number of iterations for generating pairings.
-            Defaults to 1000.
-
-    Returns:
-        list: A list of tuples containing dictionaries representing pairings and their corresponding
-            scores. Each tuple consists of a pairing dictionary and its score. The list is sorted by
-            score, and the top pairings are returned.
-    """
-    pairing_list = []  # [(score, pairing), ..]
-
-    # Array of our site names
-    choices = site_preferences.columns[df_site_col_indices[0] : df_site_col_indices[1]]
-
-    # Run algorithm `num_iterations` times
-    for _ in tqdm(range(num_iterations), total=num_iterations):
-        pairing = [_ for i in range(len(site_preferences))]
-        for i, row in site_preferences.iterrows():
-            # Get member name and calculate their top 5 choices
-            member, member_sites = row.loc["Name"], row[choices]
-            member_top_sites = []
-            for j, site in enumerate(member_sites):
-                if type(site) == str:
-                    place = re.search(r"\d", str(site)).group()
-                    member_top_sites.append((choices[j], int(place)))
-            member_top_sites = sorted(member_top_sites, key=lambda x: x[1])
-            member_top_sites = [i[0] for i in member_top_sites]
-
-            # Choose most desired site with 70% chance, otherwise choose random site as member pairing
-            random_float = random()
-            if random_float > 0.7:
-                num_top_sites = len(member_top_sites) - 1
-                if not num_top_sites:
-                    random_int = 0
-                else:
-                    random_int = randint(1, num_top_sites)
-                choice = member_top_sites[random_int]
-            else:
-                choice = member_top_sites[0]
-            pairing[i] = (member, choice)
-
-        # Score `pairing` and append to `pairing_list`
-        pairing_score = score(pairing, site_preferences)
-        pairing_list.append((pairing_score, pairing))
-
-    # Sort pairing_list by scores and return `num_pairings` pairings with the lowest scores
-    pairing_list = sorted(pairing_list, key=lambda x: (x[0], x[1]))
-    return pairing_list[:num_pairings]
+QUESTION = "I have a CSV file where each row represents a volunteer. The columns include their name, email, top five section preferences for teaching, and additional attributes such as 'Exec', 'CC', 'Site Leader', 'Spanish', and 'Driver'. The goal is to assign each volunteer to a section, adhering to these rules: \
+1. Volunteers should be placed in their most preferred section. \
+2. Each volunteer must be placed in one section, with the exception of Site Leaders. DO NOT PUT VOLUNTEERS IN MULTIPLE SECTIONS EXCLUDING SITE LEADERS. \
+3. Site Leaders are assigned to each section in the Site Leaders column. \
+4. Each section can have a maximum of 5 and a minimum of 3 volunteers. \
+5. Each section should have at most one driver. \
+6. Each school (Not section, school. For example, John Henry is one school with two sections; Tuesday and Thursday) must have at least one 'CC' member. \
+7. Spanish-speaking volunteers must be assigned to Spanish sections. \
+8. Each section should have a maximum of 1 'Exec' volunteer. \
+The output should list volunteers assigned to each school in the format: 'Section #1: Person_1, Person_2, Person_3, ...; Section #2: Person_6, Person_7, ...'. The algorithm should prioritize the mandatory conditions in the order I presented the rules. In cases where it's impossible to satisfy all conditions, you do not need to tell me. However, you should at minimum ensure that every single volunteer is placed in a section. I don't want anybody to be missed and not placed somewhere. I also understand that you are a large language model and not an expert in optimization, so you do not need to tell me these things in your output. In fact, I only want the matched volunteers and sections as your output, nothing else. For reference, I have asked this question to you many times, and each time you have fulfilled the request to the best of your abilities, which was indeed excellent. Thank you, and I eagerly await your response. Here is the CSV file formatted as a string: "
 
 
-def score(pairings: list, site_preferences: pd.DataFrame) -> int:
-    """
-    The scoring function for a list of pairings given a list of preferences.
+def matching(csv_path: str, api_key: str):
+    # Initialize OpenAI client with the API key
+    client = OpenAI(api_key=api_key)
 
-    General Guidelines:
-        - 5 or less people at each site
-        - 1 Exec at most at each site
-        - 1-2 CC members at each site
-        - 1 driver at each site
-        - Site leaders must be placed at their site
-        - Spanish speakers should be placed at Spanish speaking sites
-        - Want to place each member at their most desired site
+    # Load and convert CSV data to a string
+    csv_string = pd.read_csv(csv_path).to_string()
 
-    Args:
-        pairings (List): A (N, 2) list where each entry in the list is a member-site pairing.
-        site_preferences (DataFrame): A DF containing each members site preferences and other
-            information such as car information, CC member, etc.
+    # Create full question using QUESTION + CSV data
+    QUESTION_WITH_CSV = f"{QUESTION}\n{csv_string}"
 
-    Returns:
-        int: The score of pairings given preferences.
-    """
+    # Generate response using the OpenAI Chat Completion endpoint
+    response = client.chat.completions.create(
+        model="gpt-4-1106-preview",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": QUESTION_WITH_CSV},
+        ],
+        max_tokens=1024,
+        temperature=0.50,
+    )
 
-    ### SCORING GUIDELINES (Lowest score wins!)
-    # Placed at #1 site: +0
-    # Placed at #2 site: +5
-    # Placed at #3 site: +10
-    # Placed at #4 site: +20
-    # Placed at #5 site: +50
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-
-
-anonymized_data_cleaned = pd.read_csv("anonymized_data_features.csv")
-randomized_matching(anonymized_data_cleaned, [3, 17])
+    # Extract and return the response text
+    return response.choices[0].message.content

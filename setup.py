@@ -9,7 +9,7 @@ setup(
         "numpy",
         "pandas",
         "ipykernel",
-        "tqdm",
+        "openai",
     ],
     tests_require=[
         # List your test dependencies here
