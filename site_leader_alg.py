@@ -93,6 +93,7 @@ def assign(row):
     is_site_leader = row["Site Leader"]
     is_CC = row["CC"]
     is_driver = row["Driver"]
+    is_spanish_speaking = row["Spanish Speaking"]
 
     # get the site preferences of a person
     site_choices = row.values.tolist()[3:18]
@@ -133,7 +134,6 @@ def assign(row):
 
             if site.has_CC and is_CC:
                 # go to another site that doesn't already have a site leader
-
                 continue
 
             # update site attributes
@@ -153,6 +153,13 @@ def assign(row):
             
             if is_driver:
                 site.has_driver = True
+
+            if is_spanish_speaking:
+                site.is_spanish_speaking = True
+
+                # make sure spanish speaking ppl always get matched to a spanish speaking site if there is space
+                # if not, match them to another site
+                # only people who are spanish speaking can get matched to a spanish speaking site
 
             # add person to site
             site.people.append(name)
